@@ -1,0 +1,9 @@
+package com.example.inputbe.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public record CreateStudentRequest(
+        @NotBlank @Size(max = 100) String name
+) {
+}
