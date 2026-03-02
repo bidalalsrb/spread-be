@@ -21,6 +21,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -83,7 +84,7 @@ public class SheetsService {
 
         NetHttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
         GoogleCredentials credentials;
-        try (InputStream in = new FileInputStream(credentialsPath)) {
+        try (InputStream in = openCredentialsStream(credentialsPath.trim())) {
             credentials = GoogleCredentials.fromStream(in)
                     .createScoped(List.of(SheetsScopes.SPREADSHEETS));
         }
@@ -119,5 +120,13 @@ public class SheetsService {
     private String toRange(String sheetName, String cells) {
         String escaped = sheetName.replace("'", "''");
         return "'" + escaped + "'!" + cells;
+    }
+
+    private InputStream openCredentialsStream(String path) throws IOException {
+        if (path.startsWith("classpath:")) {
+            String classpathLocation = path.substring("classpath:".length());
+            return new ClassPathResource(classpathLocation).getInputStream();
+        }
+        return new FileInputStream(path);
     }
 }

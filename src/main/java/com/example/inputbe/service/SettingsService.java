@@ -3,6 +3,7 @@ package com.example.inputbe.service;
 import com.example.inputbe.dto.UpdateSettingsRequest;
 import com.example.inputbe.entity.AppSettings;
 import com.example.inputbe.repository.AppSettingsRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -13,19 +14,24 @@ public class SettingsService {
 
     private final AppSettingsRepository appSettingsRepository;
 
+    @Value("${app.sheets.fixed-spreadsheet:}")
+    private String fixedSpreadsheet;
+
     public SettingsService(AppSettingsRepository appSettingsRepository) {
         this.appSettingsRepository = appSettingsRepository;
     }
 
     public AppSettings getSettings() {
-        return appSettingsRepository.findById(SETTINGS_ID)
+        AppSettings settings = appSettingsRepository.findById(SETTINGS_ID)
                 .orElseGet(this::createDefault);
+        applyFixedSpreadsheet(settings);
+        return settings;
     }
 
     public AppSettings updateSettings(UpdateSettingsRequest request) {
         AppSettings settings = getSettings();
-        settings.setSpreadsheetId(request.spreadsheetId().trim());
         settings.setSheetName(normalizeSheetName(request.sheetName()));
+        applyFixedSpreadsheet(settings);
         return appSettingsRepository.save(settings);
     }
 
@@ -35,6 +41,12 @@ public class SettingsService {
         settings.setSpreadsheetId("");
         settings.setSheetName(DEFAULT_SHEET_NAME);
         return appSettingsRepository.save(settings);
+    }
+
+    private void applyFixedSpreadsheet(AppSettings settings) {
+        if (fixedSpreadsheet != null && !fixedSpreadsheet.isBlank()) {
+            settings.setSpreadsheetId(fixedSpreadsheet.trim());
+        }
     }
 
     private String normalizeSheetName(String sheetName) {
