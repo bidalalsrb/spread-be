@@ -26,7 +26,9 @@ public class TokenAuthFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String uri = request.getRequestURI();
-        return "/api/auth/login".equals(uri) || HttpMethod.OPTIONS.matches(request.getMethod());
+        return "/api/auth/login".equals(uri)
+                || "/auth/login".equals(uri)
+                || HttpMethod.OPTIONS.matches(request.getMethod());
     }
 
     @Override
