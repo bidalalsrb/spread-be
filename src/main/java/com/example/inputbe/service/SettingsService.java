@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 public class SettingsService {
 
     private static final Long SETTINGS_ID = 1L;
-    private static final String DEFAULT_SHEET_NAME = "메모기록";
+    private static final String LEGACY_SHEET_NAME_MEMO = "메모";
+    private static final String LEGACY_SHEET_NAME_MEMO_LOG = "메모기록";
+    private static final String DEFAULT_SHEET_NAME = "관찰";
 
     private final AppSettingsRepository appSettingsRepository;
 
@@ -24,6 +26,7 @@ public class SettingsService {
     public AppSettings getSettings() {
         AppSettings settings = appSettingsRepository.findById(SETTINGS_ID)
                 .orElseGet(this::createDefault);
+        migrateLegacySheetName(settings);
         applyFixedSpreadsheet(settings);
         return settings;
     }
@@ -46,6 +49,14 @@ public class SettingsService {
     private void applyFixedSpreadsheet(AppSettings settings) {
         if (fixedSpreadsheet != null && !fixedSpreadsheet.isBlank()) {
             settings.setSpreadsheetId(fixedSpreadsheet.trim());
+        }
+    }
+
+    private void migrateLegacySheetName(AppSettings settings) {
+        String sheetName = settings.getSheetName();
+        if (LEGACY_SHEET_NAME_MEMO.equals(sheetName) || LEGACY_SHEET_NAME_MEMO_LOG.equals(sheetName)) {
+            settings.setSheetName(DEFAULT_SHEET_NAME);
+            appSettingsRepository.save(settings);
         }
     }
 

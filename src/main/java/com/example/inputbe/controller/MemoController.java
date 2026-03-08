@@ -27,7 +27,12 @@ public class MemoController {
     @PostMapping
     public ResponseEntity<MemoResponse> create(@Valid @RequestBody CreateMemoRequest request) {
         AppSettings settings = settingsService.getSettings();
-        String savedAt = sheetsService.appendMemo(settings, request.studentName().trim(), request.content().trim());
+        String savedAt = sheetsService.appendMemo(
+                settings,
+                request.category(),
+                request.studentName().trim(),
+                request.content().trim()
+        );
         return ResponseEntity.ok(MemoResponse.success(savedAt));
     }
 }

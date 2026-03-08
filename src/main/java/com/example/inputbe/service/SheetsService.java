@@ -1,5 +1,6 @@
 package com.example.inputbe.service;
 
+import com.example.inputbe.dto.RecordCategory;
 import com.example.inputbe.entity.AppSettings;
 import com.example.inputbe.exception.BadRequestException;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
@@ -18,6 +19,7 @@ import java.security.GeneralSecurityException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,7 +38,7 @@ public class SheetsService {
     @Value("${google.application.name:spread-input}")
     private String applicationName;
 
-    public String appendMemo(AppSettings settings, String studentName, String content) {
+    public String appendMemo(AppSettings settings, RecordCategory category, String studentName, String content) {
         validateSettings(settings);
         String spreadsheetId = resolveSpreadsheetId(settings.getSpreadsheetId());
 
@@ -46,7 +48,7 @@ public class SheetsService {
         );
 
         ValueRange body = new ValueRange().setValues(values);
-        String range = toRange(settings.getSheetName(), "A2:C");
+        String range = toRange(category.sheetName(), "A2:C");
 
         try {
             Sheets sheets = createClient();
@@ -68,8 +70,22 @@ public class SheetsService {
         String spreadsheetId = resolveSpreadsheetId(settings.getSpreadsheetId());
         try {
             Sheets sheets = createClient();
-            String range = toRange(settings.getSheetName(), "A1:C1");
-            sheets.spreadsheets().values().get(spreadsheetId, range).execute();
+            List<String> missingTabs = new ArrayList<>();
+
+            for (RecordCategory category : RecordCategory.values()) {
+                String range = toRange(category.sheetName(), "A1:C1");
+                try {
+                    sheets.spreadsheets().values().get(spreadsheetId, range).execute();
+                } catch (GoogleJsonResponseException e) {
+                    missingTabs.add(category.sheetName());
+                }
+            }
+
+            if (!missingTabs.isEmpty()) {
+                throw new BadRequestException("sheet connection failed: missing tabs - " + String.join(", ", missingTabs));
+            }
+        } catch (BadRequestException e) {
+            throw e;
         } catch (GoogleJsonResponseException e) {
             throw new BadRequestException("sheet connection failed: " + e.getDetails().getMessage());
         } catch (Exception e) {

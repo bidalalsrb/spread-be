@@ -28,5 +28,5 @@ CREATE TABLE IF NOT EXISTS auth_tokens (
 );
 
 INSERT INTO app_settings (id, spreadsheet_id, sheet_name, updated_at)
-SELECT 1, '', '메모기록', NOW()
+SELECT 1, '', '관찰', NOW()
 WHERE NOT EXISTS (SELECT 1 FROM app_settings WHERE id = 1);
