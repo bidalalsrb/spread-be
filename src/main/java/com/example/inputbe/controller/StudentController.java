@@ -4,6 +4,7 @@ import com.example.inputbe.dto.ApiResponse;
 import com.example.inputbe.dto.CreateStudentRequest;
 import com.example.inputbe.dto.StudentItem;
 import com.example.inputbe.dto.StudentsResponse;
+import com.example.inputbe.dto.UpdateStudentRequest;
 import com.example.inputbe.entity.Student;
 import com.example.inputbe.exception.BadRequestException;
 import com.example.inputbe.exception.NotFoundException;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -57,5 +59,22 @@ public class StudentController {
                 .orElseThrow(() -> new NotFoundException("student not found"));
         studentRepository.delete(student);
         return ResponseEntity.ok(ApiResponse.ok("deleted"));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse> update(@PathVariable Long id, @Valid @RequestBody UpdateStudentRequest request) {
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("student not found"));
+
+        String name = request.name().trim();
+        boolean nameTakenByAnotherStudent = studentRepository.existsByName(name)
+                && !student.getName().equals(name);
+        if (nameTakenByAnotherStudent) {
+            throw new BadRequestException("student already exists");
+        }
+
+        student.setName(name);
+        studentRepository.save(student);
+        return ResponseEntity.ok(ApiResponse.ok("updated"));
     }
 }
